@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Application Tracker</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f6fa;
+      color: #2f3640;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #273c75;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    input, select, button {
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #dcdde1;
+      font-size: 1rem;
+    }
+
+    input[type="text"], input[type="url"], select {
+      flex: 1;
+    }
+
+    button {
+      background-color: #273c75;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #40739e;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    .status-applied { color: #0097e6; }
+    .status-interview { color: #fbc531; }
+    .status-offer { color: #44bd32; }
+    .status-rejected { color: #e84118; }
+
+    .actions button {
+      margin-right: 5px;
+      padding: 5px 8px;
+      font-size: 0.9rem;
+    }
+
+    .empty {
+      text-align: center;
+      color: #aaa;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Job Application Tracker</h1>
+    <form id="jobForm">
+      <input type="text" id="company" placeholder="Company" required />
+      <input type="text" id="position" placeholder="Position" required />
+      <input type="url" id="link" placeholder="Job Link (optional)" />
+      <select id="status">
+        <option value="Applied">Applied</option>
+        <option value="Interview">Interview</option>
+        <option value="Offer">Offer</option>
+        <option value="Rejected">Rejected</option>
+      </select>
+      <button type="submit">Add</button>
+    </form>
+
+    <table id="jobTable">
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Position</th>
+          <th>Link</th>
+          <th>Status</th>
+          <th>Date Added</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="jobList"></tbody>
+    </table>
+    <div class="empty" id="emptyMessage">No applications yet.</div>
+  </div>
+
+  <script>
+    const form = document.getElementById('jobForm');
+    const jobList = document.getElementById('jobList');
+    const emptyMessage = document.getElementById('emptyMessage');
+    let jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+
+    function saveJobs() {
+      localStorage.setItem('jobs', JSON.stringify(jobs));
+    }
+
+    function renderJobs() {
+      jobList.innerHTML = '';
+      if (jobs.length === 0) {
+        emptyMessage.style.display = 'block';
+        return;
+      }
+      emptyMessage.style.display = 'none';
+      jobs.forEach((job, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${job.company}</td>
+          <td>${job.position}</td>
+          <td>${job.link ? `<a href="${job.link}" target="_blank">Link</a>` : '-'}</td>
+          <td class="status-${job.status.toLowerCase()}">${job.status}</td>
+          <td>${new Date(job.date).toLocaleDateString()}</td>
+          <td class="actions">
+            <button onclick="editJob(${index})">Edit</button>
+            <button onclick="deleteJob(${index})">Delete</button>
+          </td>
+        `;
+        jobList.appendChild(row);
+      });
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const company = document.getElementById('company').value.trim();
+      const position = document.getElementById('position').value.trim();
+      const link = document.getElementById('link').value.trim();
+      const status = document.getElementById('status').value;
+      if (!company || !position) return;
+
+      jobs.push({ company, position, link, status, date: new Date() });
+      saveJobs();
+      renderJobs();
+      form.reset();
+    });
+
+    function deleteJob(index) {
+      if (confirm('Delete this application?')) {
+        jobs.splice(index, 1);
+        saveJobs();
+        renderJobs();
+      }
+    }
+
+    function editJob(index) {
+      const job = jobs[index];
+      const newCompany = prompt('Edit company:', job.company);
+      const newPosition = prompt('Edit position:', job.position);
+      const newLink = prompt('Edit link (optional):', job.link);
+      const newStatus = prompt('Edit status (Applied, Interview, Offer, Rejected):', job.status);
+      if (newCompany && newPosition && newStatus) {
+        jobs[index] = { ...job, company: newCompany, position: newPosition, link: newLink, status: newStatus };
+        saveJobs();
+        renderJobs();
+      }
+    }
+
+    renderJobs();
+  </script>
+</body>
+</html>
